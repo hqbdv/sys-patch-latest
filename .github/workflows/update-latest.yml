@@ -1,0 +1,42 @@
+name: Update latest sys-patch
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # check every 6 hours
+  workflow_dispatch:         # also allow manual run
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get latest release info
+        id: latest
+        run: |
+          RESPONSE=$(curl -s https://api.github.com/repos/impeeza/sys-patch/releases/latest)
+          TAG=$(echo "$RESPONSE" | jq -r .tag_name)
+          ASSET_URL=$(echo "$RESPONSE" | jq -r '.assets[] | select(.name | endswith(".zip")) | .browser_download_url')
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "url=$ASSET_URL" >> $GITHUB_OUTPUT
+          echo "Latest tag: $TAG"
+          echo "Asset URL: $ASSET_URL"
+
+      - name: Download the latest zip
+        run: |
+          curl -L -o sys-patch.zip "${{ steps.latest.outputs.url }}"
+
+      - name: Create or update the permanent release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest sys-patch (${{ steps.latest.outputs.tag }})
+          body: |
+            Automatically updated permanent download of the latest sys-patch release.
+            Current version: **${{ steps.latest.outputs.tag }}**
+          files: sys-patch.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
