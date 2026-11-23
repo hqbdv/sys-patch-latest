@@ -28,7 +28,7 @@ jobs:
           curl -L -o sys-patch.zip "${{ steps.latest.outputs.url }}"
 
       - name: Create or update the permanent release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: latest
           name: Latest sys-patch (${{ steps.latest.outputs.tag }})
